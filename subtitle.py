@@ -19,7 +19,10 @@ import torch
 import pysrt
 from tqdm.auto import tqdm
 from faster_whisper import WhisperModel
-from deep_translator import GoogleTranslator
+try:
+    from deep_translator import GoogleTranslator
+except:
+    pass
 
 
 # ==============================================================================
