@@ -175,7 +175,7 @@ def process_audio_output(audio_path, make_subtitle, remove_silence, language="Au
 
     return final_audio_path, default_srt, custom_srt, word_srt, shorts_srt
 
-def stitch_chunk_files(chunk_files):
+def stitch_chunk_files(chunk_files,output_filename):
     """
     Takes a list of file paths.
     Stitches them into one file.
@@ -193,8 +193,8 @@ def stitch_chunk_files(chunk_files):
             combined_audio += segment
         except Exception as e:
             print(f"Error appending chunk {f}: {e}")
-            
-    output_filename = f"final_output_{os.getpid()}.wav"
+
+    # output_filename = f"final_output_{os.getpid()}.wav"
     combined_audio.export(output_filename, format="wav")
     
     # Clean up temp files
@@ -241,7 +241,7 @@ def generate_voice_design(text, language, voice_description, remove_silence, mak
             gc.collect()
         
         # 3. Stitch from disk
-        stitched_file = stitch_chunk_files(chunk_files)
+        stitched_file = stitch_chunk_files(chunk_files,tts_filename)
         
         # 4. Post-Process
         final_audio, srt1, srt2, srt3, srt4 = process_audio_output(stitched_file, make_subs, remove_silence, language)
@@ -279,7 +279,7 @@ def generate_custom_voice(text, language, speaker, instruct, model_size, remove_
             torch.cuda.empty_cache()
             gc.collect()
             
-        stitched_file = stitch_chunk_files(chunk_files)
+        stitched_file = stitch_chunk_files(chunk_files,tts_filename)
         final_audio, srt1, srt2, srt3, srt4 = process_audio_output(stitched_file, make_subs, remove_silence, language)
         return final_audio, "Generation Success!", srt1, srt2, srt3, srt4
 
@@ -334,7 +334,7 @@ def smart_generate_clone(ref_audio, ref_text, target_text, language, mode, model
             gc.collect()
 
         # 4. Stitch & Process
-        stitched_file = stitch_chunk_files(chunk_files)
+        stitched_file = stitch_chunk_files(chunk_files,tts_filename)
         final_audio, srt1, srt2, srt3, srt4 = process_audio_output(stitched_file, make_subs, remove_silence, language)
         return final_audio, f"Success! Mode: {mode}", srt1, srt2, srt3, srt4
 
