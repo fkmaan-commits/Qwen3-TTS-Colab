@@ -19,10 +19,6 @@ import torch
 import pysrt
 from tqdm.auto import tqdm
 from faster_whisper import WhisperModel
-try:
-    from deep_translator import GoogleTranslator
-except:
-    pass
 
 
 # ==============================================================================
@@ -513,35 +509,13 @@ def generate_srt_from_sentences(sentence_timestamp, srt_path="default_subtitle.s
             srt_file.write(f"{index}\n{start} --> {end}\n{sentence['text']}\n\n")
 
 
-# ==============================================================================
-# --- 6. TRANSLATION UTILITIES
-# ==============================================================================
-
-def translate_text(text, source_language, destination_language):
-    """Translates a single block of text using GoogleTranslator."""
-    source_code = LANGUAGE_CODE[source_language]
-    target_code = LANGUAGE_CODE[destination_language]
-    if destination_language == "Chinese":
-        target_code = 'zh-CN'
-
-    translator = GoogleTranslator(source=source_code, target=target_code)
-    return str(translator.translate(text.strip()))
-
-def translate_subtitle(subtitles, source_language, destination_language):
-    """Translates the text content of a pysrt Subtitle object."""
-    translated_text_dump = ""
-    for sub in subtitles:
-        translated_text = translate_text(sub.text, source_language, destination_language)
-        sub.text = translated_text
-        translated_text_dump += translated_text.strip() + " "
-    return subtitles, translated_text_dump.strip()
 
 
 # ==============================================================================
 # --- 7. MAIN ORCHESTRATOR FUNCTION
 # ==============================================================================
 
-def subtitle_maker(media_file, source_lang, target_lang):
+def subtitle_maker(media_file, source_lang):
     """
     The main entry point to generate and optionally translate subtitles.
 
@@ -563,19 +537,9 @@ def subtitle_maker(media_file, source_lang, target_lang):
         print(f"❌ An error occurred during transcription: {e}")
         return (None, None, None, None, None, None,None,None, f"Error: {e}")
 
-    translated_srt_path = None
-    if detected_lang and detected_lang != target_lang:
-        # print(f"TRANSLATING from {detected_lang} to {target_lang}")
-        original_subs = pysrt.open(default_srt, encoding='utf-8')
-        translated_subs, _ = translate_subtitle(original_subs, detected_lang, target_lang)
-        base_name, ext = os.path.splitext(os.path.basename(default_srt))
-        translated_filename = f"{base_name}_to_{target_lang}{ext}"
-        translated_srt_path = os.path.join(SUBTITLE_FOLDER, translated_filename)
-        translated_subs.save(translated_srt_path, encoding='utf-8')
-
     
     return (
-        default_srt, translated_srt_path, custom_srt, word_srt,
+        default_srt, custom_srt, word_srt,
         shorts_srt, txt_path,sentence_json,word_json, transcript,detected_lang
     )
 
@@ -588,19 +552,15 @@ os.makedirs(TEMP_FOLDER, exist_ok=True)
 
 
 # from subtitle import subtitle_maker
+# media_file = "/content/output.mp3"
+# source_lang = "Auto" #"English"
 
-# media_file = "video.mp4"
-# source_lang = "English"
-# target_lang = "English"
-
-#   default_srt, translated_srt_path, custom_srt, word_srt, shorts_srt, txt_path,sentence_json,word_json, transcript= subtitle_maker(
-#     media_file, source_lang, target_lang
+# default_srt, custom_srt, word_srt,shorts_srt, txt_path,sentence_json,word_json, transcript,detected_lang= subtitle_maker(
+#     media_file, source_lang
 # )
-# If source_lang and target_lang are the same, translation will be skipped.
+
 
 # default_srt      -> Original subtitles generated directly by Whisper-Large-V3-Turbo-CT2
-# translated_srt   -> Translated subtitles (only generated if source_lang ≠ target_lang, 
-#                      e.g., English → Hindi)
 # custom_srt       -> Modified version of default subtitles with shorter segments 
 #                      (better readability for horizontal videos, Maximum 38 characters per segment. )
 # word_srt         -> Word-level timestamps (useful for creating YouTube Shorts/Reels)
@@ -608,6 +568,6 @@ os.makedirs(TEMP_FOLDER, exist_ok=True)
 # txt_path         -> Full transcript as plain text (useful for video summarization or for asking questions about the video or audio data with other LLM tools)
 # sentence_json,word_json --> To Generate .ass file later
 # transcript       -> Transcript text directly returned by the function, if you just need the transcript
-
+# detected_lang    -> Detected Lang
 # All functionality is contained in a single file, making it portable 
 # and reusable across multiple projects for different purposes.
