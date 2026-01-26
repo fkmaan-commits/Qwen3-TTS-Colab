@@ -1,0 +1,4 @@
+@echo off
+cd /d <full_path>\Qwen3-TTS-Colab
+python app.py
+pause
